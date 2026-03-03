@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+*,
+*::before,
+*::after {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  color: #ffffff;
+  background: #060c07;
+  margin: 0;
+  padding: 0;
+}

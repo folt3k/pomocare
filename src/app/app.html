@@ -1,0 +1,297 @@
+<!-- ░░ APP + BACKGROUND (single fixed root) ░░ -->
+<div class="fixed inset-0 flex flex-col overflow-auto"
+     style="background:#060c07; font-family:'Inter',system-ui,sans-serif; color:#fff">
+
+  <!-- Ambient background — absolute inside fixed = covers viewport -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden" style="z-index:0">
+    <div class="absolute" style="top:50%;left:58%;transform:translate(-50%,-50%);width:900px;height:800px;
+      background:radial-gradient(ellipse,rgba(5,150,105,.13) 0%,rgba(5,150,105,.05) 40%,transparent 70%)"></div>
+    <div class="animate-float absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
+         style="background:radial-gradient(circle,rgba(16,185,129,.07) 0%,transparent 70%);filter:blur(50px)"></div>
+    <div class="animate-float-alt absolute -bottom-40 left-1/4 w-[400px] h-[400px] rounded-full"
+         style="background:radial-gradient(circle,rgba(13,148,136,.06) 0%,transparent 70%);filter:blur(50px)"></div>
+    <div class="absolute w-1.5 h-1.5 rounded-full" style="top:18%;left:38%;background:rgba(16,185,129,.18)"></div>
+    <div class="absolute w-1   h-1   rounded-full" style="top:65%;left:22%;background:rgba(16,185,129,.14)"></div>
+    <div class="absolute w-2   h-2   rounded-full" style="top:35%;right:18%;background:rgba(16,185,129,.1)"></div>
+    <div class="absolute w-1   h-1   rounded-full" style="bottom:22%;right:30%;background:rgba(16,185,129,.12)"></div>
+    <div class="absolute w-1.5 h-1.5 rounded-full" style="top:75%;left:60%;background:rgba(16,185,129,.1)"></div>
+  </div>
+
+  <!-- ── TOP BAR ── -->
+  <header class="flex items-center justify-between px-8 py-5" style="position:relative;z-index:1">
+    <!-- Logo -->
+    <div class="flex items-center gap-2.5">
+      <span class="text-base font-semibold tracking-tight">
+        Pomo<span class="text-green">Care</span>
+      </span>
+    </div>
+    <!-- Session counter (only during work) -->
+    @if (timer.state() === 'session' || timer.state() === 'break') {
+      <div class="glass-lite rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5">
+        <span style="color:rgba(255,255,255,.3)">Sesja</span>
+        <span class="font-bold text-green">{{ timer.currentSession() }}</span>
+        <span style="color:rgba(255,255,255,.2)">/{{ timer.TOTAL_SESSIONS }}</span>
+      </div>
+    }
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="flex-1 flex items-center justify-center px-8 pb-10" style="position:relative;z-index:1">
+
+
+    <!-- ════════════════ IDLE ════════════════ -->
+    @if (timer.state() === 'idle') {
+      <div class="animate-in flex flex-col items-center gap-8 max-w-sm text-center">
+        <!-- Icon -->
+        <div class="w-24 h-24 rounded-[32px] flex items-center justify-center text-5xl"
+             style="background:linear-gradient(135deg,rgba(5,150,105,.2),rgba(22,163,74,.12));
+                    border:1px solid rgba(16,185,129,.2);
+                    box-shadow:0 0 60px rgba(5,150,105,.1)">
+          🍅
+        </div>
+
+        <div>
+          <h1 class="text-[2.6rem] font-black tracking-tight leading-tight mb-3">
+            Pomo<span class="text-green">Care</span>
+          </h1>
+          <p style="color:rgba(255,255,255,.38); font-size:.875rem; line-height:1.7">
+            6 sesji po 60 minut. Zmiana pozycji co 20 minut.<br>
+            Przerwy na medytację i rozciąganie.
+          </p>
+        </div>
+
+        <!-- Position pills -->
+        <div class="flex gap-2.5 w-full">
+          <div class="glass flex-1 rounded-2xl py-4 flex flex-col items-center gap-1.5">
+            <span class="text-2xl">🪑</span>
+            <span class="text-[11px] font-medium" style="color:rgba(110,231,183,.8)">Siedzenie</span>
+          </div>
+          <div class="glass flex-1 rounded-2xl py-4 flex flex-col items-center gap-1.5">
+            <span class="text-2xl">🧍</span>
+            <span class="text-[11px] font-medium" style="color:rgba(74,222,128,.8)">Stanie</span>
+          </div>
+          <div class="glass flex-1 rounded-2xl py-4 flex flex-col items-center gap-1.5">
+            <span class="text-2xl">⚽</span>
+            <span class="text-[11px] font-medium" style="color:rgba(94,234,212,.8)">Piłka</span>
+          </div>
+        </div>
+
+        <button (click)="timer.start()" class="btn-primary w-full py-4 text-base tracking-wide">
+          Rozpocznij dzień pracy
+        </button>
+      </div>
+    }
+
+
+    <!-- ════════════════ SESSION ════════════════ -->
+    @if (timer.state() === 'session') {
+      <div class="animate-in w-full h-full flex items-center justify-center">
+
+        <!-- Center: segmented ring + session timer -->
+        <div class="flex flex-col items-center gap-5 select-none">
+
+          <!-- Position label above ring -->
+          <div class="flex items-center gap-2 text-sm font-medium"
+               [style.color]="currentPositionData.color === 'emerald' ? '#6ee7b7' :
+                              currentPositionData.color === 'green'   ? '#4ade80' : '#5eead4'">
+            <span class="text-lg">{{ currentPositionData.icon }}</span>
+            <span>{{ currentPositionData.label }}</span>
+            <span style="color:rgba(255,255,255,.25); font-size:.75rem">
+              · podsesja {{ timer.currentSubSession() }}/3
+            </span>
+          </div>
+
+          <!-- Ring SVG — CSS Grid overlay (SVG + timer in same cell) -->
+          <div style="display:grid; width:360px; height:360px; flex-shrink:0">
+            <svg style="grid-area:1/1; display:block" width="360" height="360">
+              <defs>
+                <!-- Glow filters per segment colour -->
+                <filter id="glow-s0" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <filter id="glow-s1" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <filter id="glow-s2" x="-40%" y="-40%" width="180%" height="180%">
+                  <feGaussianBlur stdDeviation="5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+
+              <!--
+                Outer <g> rotates coordinate system so 0° = 12 o'clock.
+                Each sub-<g> is rotated by 0°/120°/240° to place each segment.
+                stroke-dasharray="segLen C" draws only one segment at a time.
+              -->
+              <g transform="rotate(-90, 180, 180)">
+
+                <!-- Segment 0 — Siedzenie (emerald) -->
+                <g transform="rotate(0, 180, 180)">
+                  <!-- track -->
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="rgba(16,185,129,.12)" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    stroke-linecap="butt"/>
+                  <!-- progress -->
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="#10b981" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    [attr.stroke-dashoffset]="subOffset(0)"
+                    [attr.filter]="timer.currentSubSession() === 1 ? 'url(#glow-s0)' : ''"
+                    stroke-linecap="round"
+                    class="transition-all duration-1000"/>
+                </g>
+
+                <!-- Segment 1 — Stanie (bright green) -->
+                <g transform="rotate(120, 180, 180)">
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="rgba(34,197,94,.12)" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    stroke-linecap="butt"/>
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="#22c55e" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    [attr.stroke-dashoffset]="subOffset(1)"
+                    [attr.filter]="timer.currentSubSession() === 2 ? 'url(#glow-s1)' : ''"
+                    stroke-linecap="round"
+                    class="transition-all duration-1000"/>
+                </g>
+
+                <!-- Segment 2 — Piłka (teal) -->
+                <g transform="rotate(240, 180, 180)">
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="rgba(20,184,166,.12)" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    stroke-linecap="butt"/>
+                  <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
+                    stroke="#14b8a6" [attr.stroke-width]="14"
+                    [attr.stroke-dasharray]="segLen + ' ' + ringC"
+                    [attr.stroke-dashoffset]="subOffset(2)"
+                    [attr.filter]="timer.currentSubSession() === 3 ? 'url(#glow-s2)' : ''"
+                    stroke-linecap="round"
+                    class="transition-all duration-1000"/>
+                </g>
+
+              </g>
+            </svg>
+
+            <!-- Session time in centre of ring -->
+            <div style="grid-area:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px">
+              <span class="font-black leading-none tracking-tight"
+                    style="font-size:4.5rem; font-variant-numeric:tabular-nums">
+                {{ formattedSessionTime }}
+              </span>
+              <span class="text-[10px] uppercase tracking-[.25em]"
+                    style="color:rgba(255,255,255,.25)">sesja</span>
+            </div>
+          </div>
+
+          <!-- Segment legend -->
+          <div class="flex items-center gap-5 text-xs" style="color:rgba(255,255,255,.4)">
+            @for (pos of positions; track pos.id) {
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full"
+                     [style.background]="pos.color === 'emerald' ? '#10b981' :
+                                         pos.color === 'green'   ? '#22c55e' : '#14b8a6'"
+                     [style.opacity]="timer.currentSubSession() === $index + 1 ? '1' : '0.4'">
+                </div>
+                <span [style.opacity]="timer.currentSubSession() === $index + 1 ? '1' : '0.4'">
+                  {{ pos.icon }} {{ pos.label }}
+                </span>
+              </div>
+            }
+          </div>
+
+          <!-- Play / Pause -->
+          <div class="mt-2">
+            @if (timer.isRunning()) {
+              <button (click)="timer.pause()" class="btn-primary px-14 py-4 text-base">
+                ⏸&ensp;Pauza
+              </button>
+            } @else {
+              <button (click)="timer.resume()" class="btn-primary px-14 py-4 text-base">
+                ▶&ensp;Wznów
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+
+    <!-- ════════════════ BREAK ════════════════ -->
+    @if (timer.state() === 'break') {
+      <div class="animate-in w-full h-full flex items-center justify-center">
+
+        <!-- Center: break timer -->
+        <div class="flex flex-col items-center gap-2 select-none">
+          <div class="animate-breathe text-5xl mb-4">{{ currentBreakData.icon }}</div>
+
+          <div class="text-[10px] uppercase tracking-[.3em]" style="color:rgba(255,255,255,.3)">
+            Przerwa
+          </div>
+
+          <div class="font-black leading-none tracking-tight mt-1"
+               style="font-size: clamp(5rem, 13vw, 8rem); font-variant-numeric:tabular-nums"
+               [class]="timer.currentBreakType() === 'meditation' ? 'text-teal' : 'text-amber'">
+            {{ formattedTime }}
+          </div>
+
+          <div class="text-2xl font-bold mt-3"
+               [class]="timer.currentBreakType() === 'meditation' ? 'text-teal' : 'text-amber'">
+            {{ currentBreakData.label }}
+          </div>
+        </div>
+      </div>
+    }
+
+
+    <!-- ════════════════ COMPLETED ════════════════ -->
+    @if (timer.state() === 'completed') {
+      <div class="animate-in flex flex-col items-center gap-8 max-w-sm text-center">
+        <div class="text-7xl animate-bounce">🎉</div>
+
+        <div>
+          <h2 class="text-[2.4rem] font-black tracking-tight mb-3">
+            <span class="text-green">Świetna robota!</span>
+          </h2>
+          <p style="color:rgba(255,255,255,.38); font-size:.875rem; line-height:1.7">
+            Ukończyłeś <strong style="color:rgba(255,255,255,.75)">6 sesji</strong> i
+            <strong style="color:rgba(255,255,255,.75)">18 zmian pozycji</strong>.<br>
+            Twoje ciało ci dziękuje.
+          </p>
+        </div>
+
+        <!-- Stats row -->
+        <div class="flex gap-3 w-full">
+          <div class="glass flex-1 rounded-2xl py-5 flex flex-col items-center gap-1">
+            <span class="text-[1.75rem] font-black text-green">6</span>
+            <span class="text-[10px] uppercase tracking-wider" style="color:rgba(255,255,255,.25)">sesji</span>
+          </div>
+          <div class="glass flex-1 rounded-2xl py-5 flex flex-col items-center gap-1">
+            <span class="text-[1.75rem] font-black" style="color:#6ee7b7">6h</span>
+            <span class="text-[10px] uppercase tracking-wider" style="color:rgba(255,255,255,.25)">pracy</span>
+          </div>
+          <div class="glass flex-1 rounded-2xl py-5 flex flex-col items-center gap-1">
+            <span class="text-[1.75rem] font-black" style="color:#4ade80">18</span>
+            <span class="text-[10px] uppercase tracking-wider" style="color:rgba(255,255,255,.25)">zmian</span>
+          </div>
+        </div>
+
+        <button (click)="timer.reset()" class="btn-primary w-full py-4 text-base tracking-wide">
+          Zacznij od nowa
+        </button>
+      </div>
+    }
+
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="text-center py-4 text-[10px] uppercase tracking-widest" style="position:relative;z-index:1"
+          style="color:rgba(255,255,255,.1)">
+    PoMoCare
+  </footer>
+</div>
