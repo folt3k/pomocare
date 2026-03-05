@@ -50,7 +50,7 @@ export class App {
   // ── Segmented ring helpers ──────────────────────────
   // SVG circle: cx=cy=140, r=118, so C ≈ 741 px
   readonly RING_R  = 158;   // cx=cy=180 in 360×360 SVG
-  readonly RING_GAP = 10;  // px gap between the 3 segments
+  readonly RING_GAP = 27  ;  // px gap between the 3 segments
 
   get ringC(): number   { return 2 * Math.PI * this.RING_R; }
   get segLen(): number  { return (this.ringC - this.RING_GAP * 3) / 3; }
