@@ -13,13 +13,13 @@ export class App {
   timer = inject(TimerService);
 
   readonly positions = [
-    { id: 'sitting',  label: 'Siedzenie', icon: '🪑', color: 'emerald' },
+    { id: 'sitting',  label: 'Siedzenie', icon: '🧎', color: 'emerald' },
     { id: 'standing', label: 'Stanie',    icon: '🧍', color: 'green'   },
-    { id: 'ball',     label: 'Piłka',     icon: '⚽', color: 'teal'    },
+    { id: 'ball',     label: 'Piłka',     icon: '🤸', color: 'teal'    },
   ];
 
   readonly breakTypes: Record<string, { label: string; icon: string; description: string; color: string }> = {
-    meditation: { label: 'Medytacja', icon: '🧘', description: 'Czas na chwilę spokoju i skupienia', color: 'teal' },
+    meditation: { label: 'Relaks', icon: '🧘', description: 'Czas na chwilę spokoju i skupienia', color: 'teal' },
     stretching: { label: 'Rozciąganie', icon: '🤸', description: 'Rozciągnij mięśnie i zresetuj ciało', color: 'amber' },
   };
 

@@ -1,15 +1,15 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { AudioService } from './audio.service';
 
-export type AppState = 'idle' | 'session' | 'break' | 'completed';
+export type AppState = 'idle' | 'ready' | 'session' | 'break' | 'completed';
 export type Position = 'sitting' | 'standing' | 'ball';
 export type BreakType = 'meditation' | 'stretching';
 
 @Injectable({ providedIn: 'root' })
 export class TimerService {
   readonly TOTAL_SESSIONS = 6;
-  readonly SUB_SESSION_DURATION = 1 * 60; // 20 minutes in seconds
-  readonly BREAK_DURATION = 1 * 60; // 10 minutes in seconds
+  readonly SUB_SESSION_DURATION = 20 * 60; // 20 minutes in seconds
+  readonly BREAK_DURATION = 10 * 60; // 10 minutes in seconds
   readonly SUB_SESSIONS_PER_SESSION = 3;
 
   state = signal<AppState>('idle');
@@ -86,6 +86,14 @@ export class TimerService {
     this.isRunning.set(false);
   }
 
+  startNext() {
+    if (this.state() !== 'ready') return;
+    this.state.set('session');
+    this.isRunning.set(true);
+    this.audio.playPositionChange(this.currentPosition());
+    this.startTimer();
+  }
+
   skipBreak() {
     if (this.state() !== 'break') return;
     if (this.intervalId) {
@@ -141,9 +149,8 @@ export class TimerService {
     const nextSession = this.currentSession() + 1;
     this.currentSession.set(nextSession);
     this.currentSubSession.set(1);
-    this.state.set('session');
     this.timeRemaining.set(this.SUB_SESSION_DURATION);
-    this.audio.playPositionChange(this.currentPosition());
-    this.startTimer();
+    this.isRunning.set(false);
+    this.state.set('ready');
   }
 }
