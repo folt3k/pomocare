@@ -104,6 +104,27 @@
   background: rgba(16,185,129,.25) !important;
 }
 
+/* ─── Play button (idle state center) ───────────────── */
+.play-btn {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(16,185,129,.12);
+  border: 1px solid rgba(16,185,129,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s, box-shadow .2s, transform .15s;
+  box-shadow: 0 0 32px rgba(16,185,129,.15);
+}
+.play-btn:hover {
+  background: rgba(16,185,129,.22);
+  box-shadow: 0 0 52px rgba(16,185,129,.35);
+  transform: scale(1.08);
+}
+.play-btn:active { transform: scale(.95); }
+
 /* ─── Sub-session bar ───────────────────────────────── */
 .sub-bar-active  { background: linear-gradient(90deg, #10b981, #4ade80); }
 .sub-bar-done    { background: rgba(16,185,129,.3); }
