@@ -1,4 +1,4 @@
-<main class="flex-1 h-100 flex items-center justify-center px-8 pb-10" style="position:relative;z-index:1">
+<main class="flex-1 h-full flex items-center justify-center px-8 pb-10" style="position:relative;z-index:1">
     <!-- ════════════════ IDLE ════════════════ -->
     @if (timer.state() === 'idle') {
       <div class="animate-in flex flex-col items-center gap-6 text-center">
@@ -18,7 +18,7 @@
                   [attr.stroke-dasharray]="segLen + ' ' + ringC"
                   stroke-linecap="butt"/>
               </g>
-              <g transform="rotate(240, 180, 180)">
+              <g transform="ro`tate(240, 180, 180)">
                 <circle cx="180" cy="180" [attr.r]="RING_R" fill="none"
                   stroke="rgba(20,184,166,.12)" [attr.stroke-width]="14"
                   [attr.stroke-dasharray]="segLen + ' ' + ringC"

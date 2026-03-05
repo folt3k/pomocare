@@ -8,8 +8,8 @@ export type BreakType = 'meditation' | 'stretching';
 @Injectable({ providedIn: 'root' })
 export class TimerService {
   readonly TOTAL_SESSIONS = 6;
-  readonly SUB_SESSION_DURATION = 20 * 60; // 20 minutes in seconds
-  readonly BREAK_DURATION = 10 * 60; // 10 minutes in seconds
+  readonly SUB_SESSION_DURATION = 1 * 60; // 20 minutes in seconds
+  readonly BREAK_DURATION = 1 * 60; // 10 minutes in seconds
   readonly SUB_SESSIONS_PER_SESSION = 3;
 
   state = signal<AppState>('idle');
