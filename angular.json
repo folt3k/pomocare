@@ -79,6 +79,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": ["host.docker.internal"],
+            "host": "0.0.0.0"
+          },
           "configurations": {
             "production": {
               "buildTarget": "pomocare:build:production"
