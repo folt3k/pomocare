@@ -1,9 +1,11 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, effect } from '@angular/core';
 import { AudioService } from './audio.service';
 
 export type AppState = 'idle' | 'ready' | 'session' | 'break' | 'completed';
 export type Position = 'sitting' | 'standing' | 'ball';
 export type BreakType = 'meditation' | 'stretching';
+
+const STORAGE_KEY = 'pomocare_state';
 
 @Injectable({ providedIn: 'root' })
 export class TimerService {
@@ -52,7 +54,10 @@ export class TimerService {
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private audio: AudioService) {}
+  constructor(private audio: AudioService) {
+    this.loadState();
+    effect(() => this.saveState());
+  }
 
   start() {
     this.state.set('session');
@@ -152,5 +157,85 @@ export class TimerService {
     this.timeRemaining.set(this.SUB_SESSION_DURATION);
     this.isRunning.set(false);
     this.state.set('ready');
+  }
+
+  private saveState() {
+    const data = {
+      state: this.state(),
+      currentSession: this.currentSession(),
+      currentSubSession: this.currentSubSession(),
+      timeRemaining: this.timeRemaining(),
+      isRunning: this.isRunning(),
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  private loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const data = JSON.parse(raw);
+      if (!data?.state) return;
+
+      let { state, currentSession, currentSubSession, timeRemaining, isRunning } = data;
+
+      if (isRunning && data.savedAt && (state === 'session' || state === 'break')) {
+        const elapsed = Math.floor((Date.now() - data.savedAt) / 1000);
+        ({ state, currentSession, currentSubSession, timeRemaining } =
+          this.simulateElapsed(elapsed, state, currentSession, currentSubSession, timeRemaining));
+        isRunning = state === 'session' || state === 'break';
+      }
+
+      this.state.set(state);
+      this.currentSession.set(currentSession);
+      this.currentSubSession.set(currentSubSession);
+      this.timeRemaining.set(timeRemaining);
+      this.isRunning.set(isRunning);
+
+      if (isRunning) {
+        this.startTimer();
+      }
+    } catch {
+      // ignore invalid saved data
+    }
+  }
+
+  private simulateElapsed(
+    elapsed: number,
+    state: AppState,
+    session: number,
+    subSession: number,
+    remaining: number,
+  ): { state: AppState; currentSession: number; currentSubSession: number; timeRemaining: number } {
+    while (elapsed > 0 && (state === 'session' || state === 'break')) {
+      if (elapsed >= remaining) {
+        elapsed -= remaining;
+
+        if (state === 'session') {
+          const nextSub = subSession + 1;
+          if (nextSub <= this.SUB_SESSIONS_PER_SESSION) {
+            subSession = nextSub;
+            remaining = this.SUB_SESSION_DURATION;
+          } else if (session >= this.TOTAL_SESSIONS) {
+            state = 'completed';
+          } else {
+            state = 'break';
+            remaining = this.BREAK_DURATION;
+          }
+        } else {
+          session++;
+          subSession = 1;
+          remaining = this.SUB_SESSION_DURATION;
+          state = 'ready';
+        }
+      } else {
+        remaining -= elapsed;
+        elapsed = 0;
+      }
+    }
+
+    return { state, currentSession: session, currentSubSession: subSession, timeRemaining: remaining };
   }
 }
