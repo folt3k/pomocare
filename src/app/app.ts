@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Title } from '@angular/platform-browser';
 import { TimerService } from './services/timer.service';
 
 @Component({
@@ -11,6 +12,23 @@ import { TimerService } from './services/timer.service';
 })
 export class App {
   timer = inject(TimerService);
+  private title = inject(Title);
+
+  constructor() {
+    effect(() => {
+      const state = this.timer.state();
+      if (state === 'session') {
+        const session = this.timer.currentSession();
+        const seconds = this.timer.sessionTimeRemaining();
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        const time = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        this.title.setTitle(`(#${session} | ${time}) PomoCare`);
+      } else {
+        this.title.setTitle('PomoCare');
+      }
+    });
+  }
 
   readonly positions = [
     { id: 'sitting',  label: 'Siedzenie', icon: '🧎', color: 'emerald' },
