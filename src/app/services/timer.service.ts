@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
 import { AudioService } from './audio.service';
+import { NotificationService } from './notification.service';
 
 export type AppState = 'idle' | 'ready' | 'session' | 'break' | 'completed';
 export type Position = 'sitting' | 'standing' | 'ball';
@@ -54,12 +55,13 @@ export class TimerService {
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private audio: AudioService) {
+  constructor(private audio: AudioService, private notifications: NotificationService) {
     this.loadState();
     effect(() => this.saveState());
   }
 
   start() {
+    this.notifications.requestPermission();
     this.state.set('session');
     this.isRunning.set(true);
     this.audio.playPositionChange(this.currentPosition());
@@ -133,15 +135,18 @@ export class TimerService {
         this.currentSubSession.set(nextSub);
         this.timeRemaining.set(this.SUB_SESSION_DURATION);
         this.audio.playPositionChange(this.currentPosition());
+        this.notifications.notifyPositionChange(this.currentPosition());
         this.startTimer();
       } else {
         if (this.currentSession() >= this.TOTAL_SESSIONS) {
           this.state.set('completed');
           this.audio.playComplete();
+          this.notifications.notifyComplete();
         } else {
           this.state.set('break');
           this.timeRemaining.set(this.BREAK_DURATION);
           this.audio.playBreakStart(this.currentBreakType());
+          this.notifications.notifyBreakStart(this.currentBreakType());
           this.startTimer();
         }
       }
