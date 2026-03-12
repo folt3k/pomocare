@@ -1,4 +1,4 @@
-import { Component, inject, effect } from '@angular/core';
+import { Component, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { TimerService } from './services/timer.service';
@@ -13,6 +13,12 @@ import { TimerService } from './services/timer.service';
 export class App {
   timer = inject(TimerService);
   private title = inject(Title);
+  showResetModal = signal(false);
+
+  confirmReset() {
+    this.showResetModal.set(false);
+    this.timer.reset();
+  }
 
   constructor() {
     effect(() => {

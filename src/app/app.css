@@ -125,6 +125,103 @@
 }
 .play-btn:active { transform: scale(.95); }
 
+/* ─── Reset button (top-right corner) ──────────────── */
+.reset-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+.reset-btn:hover {
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.75);
+  border-color: rgba(255,255,255,.2);
+  transform: rotate(-45deg);
+}
+.reset-btn:active { transform: rotate(-90deg) scale(.93); }
+
+/* ─── Reset confirmation modal ──────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in .18s ease both;
+}
+.modal-card {
+  background: rgba(10,20,12,.92);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px;
+  padding: 2rem 2rem 1.75rem;
+  width: min(360px, 90vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  box-shadow: 0 32px 80px rgba(0,0,0,.6);
+  animation: fade-in .2s cubic-bezier(.16,1,.3,1) both;
+}
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.25);
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: .25rem;
+}
+.modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+.modal-desc {
+  font-size: .875rem;
+  color: rgba(255,255,255,.45);
+  text-align: center;
+  margin: 0 0 .5rem;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+.modal-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(150deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 0 24px rgba(239,68,68,.25), 0 4px 16px rgba(0,0,0,.4);
+  font-weight: 600;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow .2s, transform .15s, background .2s;
+}
+.modal-confirm-btn:hover {
+  background: linear-gradient(150deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 0 36px rgba(239,68,68,.4), 0 6px 20px rgba(0,0,0,.5);
+  transform: scale(1.03);
+}
+.modal-confirm-btn:active { transform: scale(.96); }
+
 /* ─── Sub-session bar ───────────────────────────────── */
 .sub-bar-active  { background: linear-gradient(90deg, #10b981, #4ade80); }
 .sub-bar-done    { background: rgba(16,185,129,.3); }
