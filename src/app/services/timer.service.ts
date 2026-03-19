@@ -110,6 +110,22 @@ export class TimerService {
     this.advanceToNextSession();
   }
 
+  skipToNextSession() {
+    if (this.currentSession() >= this.TOTAL_SESSIONS) return;
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    const nextSession = this.currentSession() + 1;
+    this.currentSession.set(nextSession);
+    this.currentSubSession.set(1);
+    this.timeRemaining.set(this.SUB_SESSION_DURATION);
+    this.state.set('session');
+    this.isRunning.set(true);
+    this.audio.playPositionChange(this.currentPosition());
+    this.startTimer();
+  }
+
   private startTimer() {
     if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => {
