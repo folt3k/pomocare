@@ -91,4 +91,10 @@ export class AudioService {
     this.playTone(784, 0.2, now + 0.4);
     this.playTone(1047, 0.5, now + 0.6);
   }
+
+  playClick(): void {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    this.playTone(600, 0.05, now, 'sine', 0.3);
+  }
 }

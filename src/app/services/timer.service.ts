@@ -70,6 +70,7 @@ export class TimerService {
 
   pause() {
     this.isRunning.set(false);
+    this.audio.playClick();
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -78,6 +79,7 @@ export class TimerService {
 
   resume() {
     this.isRunning.set(true);
+    this.audio.playClick();
     this.startTimer();
   }
 
