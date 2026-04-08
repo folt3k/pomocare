@@ -83,6 +83,14 @@ export class TimerService {
     this.startTimer();
   }
 
+  togglePause() {
+    if (this.isRunning()) {
+      this.pause();
+    } else {
+      this.resume();
+    }
+  }
+
   reset() {
     if (this.intervalId) {
       clearInterval(this.intervalId);

@@ -1,4 +1,4 @@
-import { Component, inject, effect, signal } from '@angular/core';
+import { Component, inject, effect, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { TimerService } from './services/timer.service';
@@ -102,5 +102,13 @@ export class App {
     if (sessionNum < current) return 'completed';
     if (sessionNum === current && (state === 'session' || state === 'break')) return 'current';
     return 'upcoming';
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key === ' ' && document.activeElement === document.body) {
+      event.preventDefault();
+      this.timer.togglePause();
+    }
   }
 }
