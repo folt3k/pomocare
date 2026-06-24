@@ -136,6 +136,46 @@ export class TimerService {
     this.startTimer();
   }
 
+  addTime(minutes: number) {
+    if (this.state() !== 'session') return;
+
+    let targetTotalSeconds = this.sessionTimeRemaining() + minutes * 60;
+    const maxTotalSeconds = 59 * 60 + 59; // 59m 59s
+
+    if (targetTotalSeconds > maxTotalSeconds) {
+      targetTotalSeconds = maxTotalSeconds;
+    }
+
+    if (targetTotalSeconds <= 0) {
+      // Jak spada do lub poniżej zera wymuś koniec ostatniej podsekcji (rozpocznie się przerwa)
+      this.currentSubSession.set(this.SUB_SESSIONS_PER_SESSION);
+      this.timeRemaining.set(0);
+      this.onTimerComplete();
+      return;
+    }
+
+    const subDuration = this.SUB_SESSION_DURATION;
+    let neededFullSubs = Math.floor(targetTotalSeconds / subDuration);
+    let remTime = targetTotalSeconds % subDuration;
+
+    // Jeżeli czas dzieli się idealnie (np. 20:00 lub 40:00)
+    if (remTime === 0 && neededFullSubs > 0) {
+      neededFullSubs--;
+      remTime = subDuration;
+    }
+
+    let newSub = this.SUB_SESSIONS_PER_SESSION - neededFullSubs;
+    if (newSub < 1) newSub = 1;
+    if (newSub > this.SUB_SESSIONS_PER_SESSION) newSub = this.SUB_SESSIONS_PER_SESSION;
+
+    if (newSub !== this.currentSubSession()) {
+      this.currentSubSession.set(newSub);
+      this.audio.playPositionChange(this.currentPosition());
+    }
+
+    this.timeRemaining.set(remTime);
+  }
+
   private startTimer() {
     if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => {

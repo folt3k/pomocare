@@ -1,6 +1,25 @@
 <main class="flex-1 h-full flex items-center justify-center px-8 pb-10" style="position:relative;z-index:1">
 
   <div class="flex gap-3 absolute top-4 right-4 z-20">
+    @if (timer.state() === 'session') {
+      <button (click)="addTime(5)" class="reset-btn" title="Dodaj 5 minut">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+
+      <button (click)="addTime(-5)" class="reset-btn" title="Odejmij 5 minut">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+    }
+
     @if (timer.state() !== 'idle' && timer.state() !== 'completed' && timer.currentSession() < timer.TOTAL_SESSIONS) {
       <button (click)="timer.skipToNextSession()" class="reset-btn" title="Przejdź do następnej sesji">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -225,9 +244,22 @@
             </svg>
 
             <!-- Session time in centre of ring -->
-            <div style="grid-area:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px">
-              <span class="font-black leading-none tracking-tight"
-                    style="font-size:4.5rem; font-variant-numeric:tabular-nums">
+            <div style="grid-area:1/1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px">
+              
+              @for (bubble of timeBubbles(); track bubble.id) {
+                <!-- Wrapper for centering -->
+                <div class="absolute pointer-events-none" style="top: 15%; left: 50%; width: 0; height: 0;">
+                  <!-- Actual bubble that shrinks/grows and floats UP only (no translateX to avoid jitter) -->
+                  <div class="animate-bubble flex items-center justify-center w-10 h-10 rounded-full bg-stone-800/90 border border-stone-300/30 text-white/80 font-bold text-sm drop-shadow-lg"
+                       style="margin-left: -28px; margin-top: -28px;">
+                    {{ bubble.text }}
+                  </div>
+                </div>
+              }
+
+              <span class="font-black leading-none tracking-tight inline-block"
+                    [class.animate-jump]="timeHighlight()"
+                    style="font-size:4.5rem; font-variant-numeric:tabular-nums; will-change: transform;">
                 {{ formattedSessionTime }}
               </span>
               <div class="flex items-center gap-2 mt-1">

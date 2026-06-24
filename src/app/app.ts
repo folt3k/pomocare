@@ -71,6 +71,28 @@ export class App {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
+  // ── Bubbles and UX helpers ──────────────────────────
+  timeBubbles = signal<{id: number, text: string}[]>([]);
+  timeHighlight = signal(false);
+  private bubbleId = 0;
+
+  addTime(minutes: number) {
+    this.timer.addTime(minutes);
+    
+    // Create floating bubble
+    const id = ++this.bubbleId;
+    const text = minutes > 0 ? `+${minutes}` : `${minutes}`;
+    this.timeBubbles.update(b => [...b, { id, text }]);
+    setTimeout(() => {
+      this.timeBubbles.update(b => b.filter(x => x.id !== id));
+    }, 1500);
+
+    // Flash highlight on the time
+    this.timeHighlight.set(false);
+    setTimeout(() => this.timeHighlight.set(true), 10);
+    setTimeout(() => this.timeHighlight.set(false), 300);
+  }
+
   // ── Segmented ring helpers ──────────────────────────
   // SVG circle: cx=cy=140, r=118, so C ≈ 741 px
   readonly RING_R  = 158;   // cx=cy=180 in 360×360 SVG

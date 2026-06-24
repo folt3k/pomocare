@@ -15,11 +15,23 @@
   0%, 100% { transform: scale(1);    opacity: .7; }
   50%       { transform: scale(1.1); opacity: 1;  }
 }
+@keyframes float-up-fade {
+  0%   { opacity: 0; transform: translateY(15px) scale(0.8); }
+  20%  { opacity: 1; transform: translateY(0px) scale(1); }
+  80%  { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-50px) scale(0.9); }
+}
+@keyframes time-jump {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
 
 .animate-float     { animation: float     8s ease-in-out infinite; }
 .animate-float-alt { animation: float-alt 11s ease-in-out infinite 2s; }
 .animate-in        { animation: fade-in   .4s cubic-bezier(.16,1,.3,1) both; }
 .animate-breathe   { animation: breathe   3s ease-in-out infinite; }
+.animate-bubble    { animation: float-up-fade 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-jump      { animation: time-jump 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
 /* ─── Glass card ────────────────────────────────────── */
 .glass {
