@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Position, BreakType } from './timer.service';
+import { Position } from './timer.service';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
@@ -7,11 +7,6 @@ export class NotificationService {
     sitting: 'Siedzenie 🧎',
     standing: 'Stanie 🧍',
     ball: 'Piłka 🤸',
-  };
-
-  private readonly breakLabels: Record<BreakType, string> = {
-    meditation: 'Relaks 🧘',
-    stretching: 'Rozciąganie 🤸',
   };
 
   requestPermission(): void {
@@ -24,8 +19,8 @@ export class NotificationService {
     this.send('Zmień pozycję!', this.positionLabels[position]);
   }
 
-  notifyBreakStart(breakType: BreakType): void {
-    this.send('Czas na przerwę!', this.breakLabels[breakType]);
+  notifySessionComplete(session: number): void {
+    this.send(`Sesja nr ${session} ukończona.`, 'Zrób sobie przerwę.');
   }
 
   notifyComplete(): void {

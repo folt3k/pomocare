@@ -55,9 +55,9 @@ export class App {
     return this.breakTypes[this.timer.currentBreakType()];
   }
 
-  // Break / generic timer display
+  // Break countdown display
   get formattedTime(): string {
-    const seconds = this.timer.timeRemaining();
+    const seconds = this.timer.breakTimeRemaining();
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
