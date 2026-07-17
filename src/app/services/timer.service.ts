@@ -2,7 +2,7 @@ import { Injectable, signal, computed, effect } from '@angular/core';
 import { AudioService } from './audio.service';
 import { NotificationService } from './notification.service';
 
-export type AppState = 'idle' | 'ready' | 'session' | 'break' | 'completed';
+export type AppState = 'idle' | 'session' | 'break' | 'completed';
 export type Position = 'sitting' | 'standing' | 'ball';
 export type BreakType = 'meditation' | 'stretching';
 
@@ -12,7 +12,6 @@ const STORAGE_KEY = 'pomocare_state';
 export class TimerService {
   readonly TOTAL_SESSIONS = 6;
   readonly SUB_SESSION_DURATION = 20 * 60; // 20 minutes in seconds
-  readonly BREAK_DURATION = 10 * 60; // 10 minutes in seconds
   readonly SUB_SESSIONS_PER_SESSION = 3;
 
   state = signal<AppState>('idle');
@@ -21,8 +20,9 @@ export class TimerService {
   timeRemaining = signal(this.SUB_SESSION_DURATION);
   isRunning = signal(false);
 
-  // Przerwa liczy się osobno — sesja zostaje zamrożona i wraca w tym samym miejscu.
-  breakTimeRemaining = signal(this.BREAK_DURATION);
+  // Przerwa to stoper liczący w górę — trwa aż do ręcznego powrotu do sesji.
+  // Sesja jest wtedy zamrożona i wraca dokładnie w tym samym miejscu.
+  breakElapsed = signal(0);
 
   currentPosition = computed<Position>(() => {
     switch (this.currentSubSession()) {
@@ -39,10 +39,8 @@ export class TimerService {
   });
 
   progress = computed(() => {
-    if (this.state() === 'break') {
-      return ((this.BREAK_DURATION - this.breakTimeRemaining()) / this.BREAK_DURATION) * 100;
-    }
-    return ((this.SUB_SESSION_DURATION - this.timeRemaining()) / this.SUB_SESSION_DURATION) * 100;
+    const total = this.SUB_SESSION_DURATION;
+    return ((total - this.timeRemaining()) / total) * 100;
   });
 
   sessionProgress = computed(() => {
@@ -52,7 +50,7 @@ export class TimerService {
   });
 
   // Total seconds remaining in the whole session (all sub-sessions combined).
-  // Also valid during 'break'/'ready' — the session is frozen, not discarded.
+  // Also valid during 'break' — the session is frozen, not discarded.
   sessionTimeRemaining = computed(() => {
     const state = this.state();
     if (state === 'idle' || state === 'completed') return 0;
@@ -99,10 +97,10 @@ export class TimerService {
     }
   }
 
-  /** Ręczna przerwa z zatrzymanej sesji — sesja czeka i wraca w tym samym miejscu. */
+  /** Ręczna przerwa z zatrzymanej sesji — liczy się w górę, aż do endBreak(). */
   startBreak() {
     if (this.state() !== 'session' || this.isRunning()) return;
-    this.breakTimeRemaining.set(this.BREAK_DURATION);
+    this.breakElapsed.set(0);
     this.state.set('break');
     this.isRunning.set(true);
     this.audio.playBreakStart(this.currentBreakType());
@@ -118,13 +116,13 @@ export class TimerService {
     this.currentSession.set(1);
     this.currentSubSession.set(1);
     this.timeRemaining.set(this.SUB_SESSION_DURATION);
-    this.breakTimeRemaining.set(this.BREAK_DURATION);
+    this.breakElapsed.set(0);
     this.isRunning.set(false);
   }
 
-  /** Powrót do sesji zamrożonej na czas przerwy. */
-  startNext() {
-    if (this.state() !== 'ready') return;
+  /** Koniec przerwy — powrót do sesji zamrożonej w momencie jej rozpoczęcia. */
+  endBreak() {
+    if (this.state() !== 'break') return;
     this.state.set('session');
     this.isRunning.set(true);
     this.audio.playPositionChange(this.currentPosition());
@@ -190,47 +188,46 @@ export class TimerService {
   private startTimer() {
     if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => {
-      const countdown = this.state() === 'break' ? this.breakTimeRemaining : this.timeRemaining;
-      const remaining = countdown() - 1;
+      if (this.state() === 'break') {
+        this.breakElapsed.update((e) => e + 1);
+        return;
+      }
+      const remaining = this.timeRemaining() - 1;
       if (remaining <= 0) {
-        countdown.set(0);
+        this.timeRemaining.set(0);
         this.onTimerComplete();
       } else {
-        countdown.set(remaining);
+        this.timeRemaining.set(remaining);
       }
     }, 1000);
   }
 
+  /** Wywoływane tylko dla sesji — przerwa nie ma końca sterowanego zegarem. */
   private onTimerComplete() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
 
-    if (this.state() === 'session') {
-      const nextSub = this.currentSubSession() + 1;
-      if (nextSub <= this.SUB_SESSIONS_PER_SESSION) {
-        this.currentSubSession.set(nextSub);
-        this.timeRemaining.set(this.SUB_SESSION_DURATION);
-        this.audio.playPositionChange(this.currentPosition());
-        this.notifications.notifyPositionChange(this.currentPosition());
-        this.startTimer();
-      } else if (this.currentSession() >= this.TOTAL_SESSIONS) {
-        this.state.set('completed');
-        this.isRunning.set(false);
-        this.audio.playComplete();
-        this.notifications.notifyComplete();
-      } else {
-        this.notifications.notifySessionComplete(this.currentSession());
-        this.currentSession.update((s) => s + 1);
-        this.currentSubSession.set(1);
-        this.timeRemaining.set(this.SUB_SESSION_DURATION);
-        this.audio.playPositionChange(this.currentPosition());
-        this.startTimer();
-      }
-    } else if (this.state() === 'break') {
+    const nextSub = this.currentSubSession() + 1;
+    if (nextSub <= this.SUB_SESSIONS_PER_SESSION) {
+      this.currentSubSession.set(nextSub);
+      this.timeRemaining.set(this.SUB_SESSION_DURATION);
+      this.audio.playPositionChange(this.currentPosition());
+      this.notifications.notifyPositionChange(this.currentPosition());
+      this.startTimer();
+    } else if (this.currentSession() >= this.TOTAL_SESSIONS) {
+      this.state.set('completed');
       this.isRunning.set(false);
-      this.state.set('ready');
+      this.audio.playComplete();
+      this.notifications.notifyComplete();
+    } else {
+      this.notifications.notifySessionComplete(this.currentSession());
+      this.currentSession.update((s) => s + 1);
+      this.currentSubSession.set(1);
+      this.timeRemaining.set(this.SUB_SESSION_DURATION);
+      this.audio.playPositionChange(this.currentPosition());
+      this.startTimer();
     }
   }
 
@@ -240,7 +237,7 @@ export class TimerService {
       currentSession: this.currentSession(),
       currentSubSession: this.currentSubSession(),
       timeRemaining: this.timeRemaining(),
-      breakTimeRemaining: this.breakTimeRemaining(),
+      breakElapsed: this.breakElapsed(),
       isRunning: this.isRunning(),
       savedAt: Date.now(),
     };
@@ -256,17 +253,30 @@ export class TimerService {
       if (!data?.state) return;
 
       let { state, currentSession, currentSubSession, timeRemaining, isRunning } = data;
-      let breakTimeRemaining = data.breakTimeRemaining ?? this.BREAK_DURATION;
+      let breakElapsed = data.breakElapsed ?? 0;
+
+      // Zapis sprzed przerwy-stopera: 'ready' już nie istnieje, a 'break' znaczyło
+      // wtedy „sesja skończona, trwa 10-minutowa przerwa". Jedno i drugie sprowadzamy
+      // do zatrzymanej sesji na granicy sesji.
+      if (data.breakElapsed === undefined && (state === 'break' || state === 'ready')) {
+        if (state === 'break') {
+          currentSession = Math.min(currentSession + 1, this.TOTAL_SESSIONS);
+        }
+        currentSubSession = 1;
+        timeRemaining = this.SUB_SESSION_DURATION;
+        state = 'session';
+        isRunning = false;
+      }
 
       if (isRunning && data.savedAt && (state === 'session' || state === 'break')) {
         const elapsed = Math.floor((Date.now() - data.savedAt) / 1000);
-        ({ state, currentSession, currentSubSession, timeRemaining, breakTimeRemaining } =
+        ({ state, currentSession, currentSubSession, timeRemaining, breakElapsed } =
           this.simulateElapsed(elapsed, {
             state,
             currentSession,
             currentSubSession,
             timeRemaining,
-            breakTimeRemaining,
+            breakElapsed,
           }));
         isRunning = state === 'session' || state === 'break';
       }
@@ -275,7 +285,7 @@ export class TimerService {
       this.currentSession.set(currentSession);
       this.currentSubSession.set(currentSubSession);
       this.timeRemaining.set(timeRemaining);
-      this.breakTimeRemaining.set(breakTimeRemaining);
+      this.breakElapsed.set(breakElapsed);
       this.isRunning.set(isRunning);
 
       if (isRunning) {
@@ -293,26 +303,20 @@ export class TimerService {
       currentSession: number;
       currentSubSession: number;
       timeRemaining: number;
-      breakTimeRemaining: number;
+      breakElapsed: number;
     },
   ) {
     let { state, currentSession: session, currentSubSession: subSession } = snapshot;
-    let { timeRemaining: remaining, breakTimeRemaining: breakRemaining } = snapshot;
+    let { timeRemaining: remaining, breakElapsed } = snapshot;
 
-    // Przerwa nie przechodzi sama w sesję — kończy się na 'ready' i czeka na użytkownika.
+    // Przerwa nie kończy się sama — po powrocie do aplikacji nadal trwa, tylko dłużej.
     if (state === 'break') {
-      if (elapsed >= breakRemaining) {
-        breakRemaining = 0;
-        state = 'ready';
-      } else {
-        breakRemaining -= elapsed;
-      }
       return {
         state,
         currentSession: session,
         currentSubSession: subSession,
         timeRemaining: remaining,
-        breakTimeRemaining: breakRemaining,
+        breakElapsed: breakElapsed + elapsed,
       };
     }
 
@@ -343,7 +347,7 @@ export class TimerService {
       currentSession: session,
       currentSubSession: subSession,
       timeRemaining: remaining,
-      breakTimeRemaining: breakRemaining,
+      breakElapsed,
     };
   }
 }

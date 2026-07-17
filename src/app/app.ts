@@ -55,12 +55,15 @@ export class App {
     return this.breakTypes[this.timer.currentBreakType()];
   }
 
-  // Break countdown display
-  get formattedTime(): string {
-    const seconds = this.timer.breakTimeRemaining();
-    const m = Math.floor(seconds / 60);
+  // Break stopwatch — counts up, so it can run past an hour
+  get formattedBreakTime(): string {
+    const seconds = this.timer.breakElapsed();
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor(seconds / 60) % 60;
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    const mm = m.toString().padStart(2, '0');
+    const ss = s.toString().padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
   }
 
   // Session countdown — full 60-min window
