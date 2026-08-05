@@ -81,7 +81,7 @@ export class App {
 
   addTime(minutes: number) {
     this.timer.addTime(minutes);
-    
+
     // Create floating bubble
     const id = ++this.bubbleId;
     const text = minutes > 0 ? `+${minutes}` : `${minutes}`;
@@ -115,25 +115,5 @@ export class App {
   /** stroke-dashoffset for the progress arc of given segment */
   subOffset(subIndex: number): number {
     return this.segLen * (1 - this.subFill(subIndex));
-  }
-
-  getSessions(): number[] {
-    return Array.from({ length: this.timer.TOTAL_SESSIONS }, (_, i) => i + 1);
-  }
-
-  getSessionStatus(sessionNum: number): 'completed' | 'current' | 'upcoming' {
-    const current = this.timer.currentSession();
-    const state = this.timer.state();
-    if (sessionNum < current) return 'completed';
-    if (sessionNum === current && (state === 'session' || state === 'break')) return 'current';
-    return 'upcoming';
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent) {
-    if (event.key === ' ' && document.activeElement === document.body) {
-      event.preventDefault();
-      this.timer.togglePause();
-    }
   }
 }

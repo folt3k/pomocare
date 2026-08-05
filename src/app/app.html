@@ -196,7 +196,7 @@
 
             <!-- Session time in centre of ring -->
             <div style="grid-area:1/1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px">
-              
+
               @for (bubble of timeBubbles(); track bubble.id) {
                 <!-- Wrapper for centering -->
                 <div class="absolute pointer-events-none" style="top: 15%; left: 50%; width: 0; height: 0;">
@@ -225,13 +225,6 @@
           <!-- Play / Pause / Break -->
           <div class="mt-2 flex items-center gap-3">
             @if (timer.isRunning()) {
-              <button (click)="timer.pause()" class="btn-primary px-14 py-4 text-base">
-                ⏸&ensp;Pauza
-              </button>
-            } @else {
-              <button (click)="timer.resume()" class="btn-primary px-14 py-4 text-base">
-                ▶&ensp;Wznów
-              </button>
               <button (click)="timer.startBreak()" class="btn-ghost px-10 py-4 text-base"
                       title="Zrób przerwę – sesja poczeka w tym miejscu">
                 ☕&ensp;Przerwa

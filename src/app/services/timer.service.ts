@@ -82,24 +82,10 @@ export class TimerService {
     }
   }
 
-  resume() {
-    this.isRunning.set(true);
-    this.audio.playClick();
-    this.startTimer();
-  }
-
-  togglePause() {
-    if (this.state() !== 'session') return;
-    if (this.isRunning()) {
-      this.pause();
-    } else {
-      this.resume();
-    }
-  }
-
   /** Ręczna przerwa z zatrzymanej sesji — liczy się w górę, aż do endBreak(). */
   startBreak() {
-    if (this.state() !== 'session' || this.isRunning()) return;
+    if (this.state() !== 'session') return;
+    this.pause();
     this.breakElapsed.set(0);
     this.state.set('break');
     this.isRunning.set(true);
