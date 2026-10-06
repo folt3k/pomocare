@@ -2,6 +2,7 @@ import { Component, inject, effect, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { TimerService } from './services/timer.service';
+import { SettingsService, SETTINGS_LIMITS } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
@@ -13,11 +14,51 @@ import { TimerService } from './services/timer.service';
 export class App {
   timer = inject(TimerService);
   private title = inject(Title);
+  private settings = inject(SettingsService);
   showResetModal = signal(false);
+  showMenu = signal(false);
+  showSettingsModal = signal(false);
+
+  readonly limits = SETTINGS_LIMITS;
+  draftSessions = signal(0);
+  draftMinutes = signal(0);
 
   confirmReset() {
     this.showResetModal.set(false);
     this.timer.reset();
+  }
+
+  openSettings() {
+    this.draftSessions.set(this.settings.totalSessions());
+    this.draftMinutes.set(this.settings.sessionMinutes());
+    this.showSettingsModal.set(true);
+  }
+
+  stepDraft(field: 'sessions' | 'minutes', direction: 1 | -1) {
+    const [draft, limits] = field === 'sessions'
+      ? [this.draftSessions, this.limits.totalSessions]
+      : [this.draftMinutes, this.limits.sessionMinutes];
+    draft.update(v => Math.min(limits.max, Math.max(limits.min, v + direction * limits.step)));
+  }
+
+  saveSettings() {
+    this.timer.applySettings(this.draftSessions(), this.draftMinutes());
+    this.showSettingsModal.set(false);
+  }
+
+  /** Length of a single position sub-session for the draft, e.g. "20:00". */
+  get draftSubDuration(): string {
+    const seconds = (this.draftMinutes() * 60) / this.timer.SUB_SESSIONS_PER_SESSION;
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.showMenu.set(false);
+    this.showSettingsModal.set(false);
+    this.showResetModal.set(false);
   }
 
   constructor() {
@@ -66,7 +107,7 @@ export class App {
     return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
   }
 
-  // Session countdown — full 60-min window
+  // Session countdown — whole session (all sub-sessions)
   get formattedSessionTime(): string {
     const seconds = this.timer.sessionTimeRemaining();
     const m = Math.floor(seconds / 60);

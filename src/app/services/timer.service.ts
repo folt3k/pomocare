@@ -1,6 +1,7 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { AudioService } from './audio.service';
 import { NotificationService } from './notification.service';
+import { SettingsService } from './settings.service';
 
 export type AppState = 'idle' | 'session' | 'break' | 'completed';
 export type Position = 'sitting' | 'standing' | 'ball';
@@ -10,14 +11,21 @@ const STORAGE_KEY = 'pomocare_state';
 
 @Injectable({ providedIn: 'root' })
 export class TimerService {
-  readonly TOTAL_SESSIONS = 6;
-  readonly SUB_SESSION_DURATION = 20 * 60; // 20 minutes in seconds
   readonly SUB_SESSIONS_PER_SESSION = 3;
+
+  private settings = inject(SettingsService);
+
+  totalSessions = computed(() => this.settings.totalSessions());
+  // Each position sub-session is always exactly 1/3 of the configured session length.
+  subSessionDuration = computed(
+    () => (this.settings.sessionMinutes() * 60) / this.SUB_SESSIONS_PER_SESSION,
+  );
+  sessionDuration = computed(() => this.settings.sessionMinutes() * 60);
 
   state = signal<AppState>('idle');
   currentSession = signal(1);
   currentSubSession = signal(1);
-  timeRemaining = signal(this.SUB_SESSION_DURATION);
+  timeRemaining = signal(this.subSessionDuration());
   isRunning = signal(false);
 
   // Przerwa to stoper liczący w górę — trwa aż do ręcznego powrotu do sesji.
@@ -39,7 +47,7 @@ export class TimerService {
   });
 
   progress = computed(() => {
-    const total = this.SUB_SESSION_DURATION;
+    const total = this.subSessionDuration();
     return ((total - this.timeRemaining()) / total) * 100;
   });
 
@@ -55,7 +63,7 @@ export class TimerService {
     const state = this.state();
     if (state === 'idle' || state === 'completed') return 0;
     const remainingSubs = this.SUB_SESSIONS_PER_SESSION - this.currentSubSession();
-    return this.timeRemaining() + remainingSubs * this.SUB_SESSION_DURATION;
+    return this.timeRemaining() + remainingSubs * this.subSessionDuration();
   });
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
@@ -63,6 +71,27 @@ export class TimerService {
   constructor(private audio: AudioService, private notifications: NotificationService) {
     this.loadState();
     effect(() => this.saveState());
+  }
+
+  /**
+   * Zastosowanie nowych ustawień. Bieżąca podsekcja zachowuje proporcjonalny postęp,
+   * a numer sesji jest przycinany do nowej liczby sesji.
+   */
+  applySettings(totalSessions: number, sessionMinutes: number) {
+    const oldSubDuration = this.subSessionDuration();
+    this.settings.update({ totalSessions, sessionMinutes });
+    const newSubDuration = this.subSessionDuration();
+
+    if (this.currentSession() > this.totalSessions()) {
+      this.currentSession.set(this.totalSessions());
+    }
+
+    if (this.state() === 'idle') {
+      this.timeRemaining.set(newSubDuration);
+    } else if (newSubDuration !== oldSubDuration) {
+      const scaled = Math.round((this.timeRemaining() / oldSubDuration) * newSubDuration);
+      this.timeRemaining.set(Math.max(1, Math.min(newSubDuration, scaled)));
+    }
   }
 
   start() {
@@ -101,7 +130,7 @@ export class TimerService {
     this.state.set('idle');
     this.currentSession.set(1);
     this.currentSubSession.set(1);
-    this.timeRemaining.set(this.SUB_SESSION_DURATION);
+    this.timeRemaining.set(this.subSessionDuration());
     this.breakElapsed.set(0);
     this.isRunning.set(false);
   }
@@ -116,7 +145,7 @@ export class TimerService {
   }
 
   skipToNextSession() {
-    if (this.currentSession() >= this.TOTAL_SESSIONS) return;
+    if (this.currentSession() >= this.totalSessions()) return;
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -124,7 +153,7 @@ export class TimerService {
     const nextSession = this.currentSession() + 1;
     this.currentSession.set(nextSession);
     this.currentSubSession.set(1);
-    this.timeRemaining.set(this.SUB_SESSION_DURATION);
+    this.timeRemaining.set(this.subSessionDuration());
     this.state.set('session');
     this.isRunning.set(true);
     this.audio.playPositionChange(this.currentPosition());
@@ -135,7 +164,7 @@ export class TimerService {
     if (this.state() !== 'session') return;
 
     let targetTotalSeconds = this.sessionTimeRemaining() + minutes * 60;
-    const maxTotalSeconds = 59 * 60 + 59; // 59m 59s
+    const maxTotalSeconds = this.sessionDuration();
 
     if (targetTotalSeconds > maxTotalSeconds) {
       targetTotalSeconds = maxTotalSeconds;
@@ -149,7 +178,7 @@ export class TimerService {
       return;
     }
 
-    const subDuration = this.SUB_SESSION_DURATION;
+    const subDuration = this.subSessionDuration();
     let neededFullSubs = Math.floor(targetTotalSeconds / subDuration);
     let remTime = targetTotalSeconds % subDuration;
 
@@ -198,11 +227,11 @@ export class TimerService {
     const nextSub = this.currentSubSession() + 1;
     if (nextSub <= this.SUB_SESSIONS_PER_SESSION) {
       this.currentSubSession.set(nextSub);
-      this.timeRemaining.set(this.SUB_SESSION_DURATION);
+      this.timeRemaining.set(this.subSessionDuration());
       this.audio.playPositionChange(this.currentPosition());
       this.notifications.notifyPositionChange(this.currentPosition());
       this.startTimer();
-    } else if (this.currentSession() >= this.TOTAL_SESSIONS) {
+    } else if (this.currentSession() >= this.totalSessions()) {
       this.state.set('completed');
       this.isRunning.set(false);
       this.audio.playComplete();
@@ -211,7 +240,7 @@ export class TimerService {
       this.notifications.notifySessionComplete(this.currentSession());
       this.currentSession.update((s) => s + 1);
       this.currentSubSession.set(1);
-      this.timeRemaining.set(this.SUB_SESSION_DURATION);
+      this.timeRemaining.set(this.subSessionDuration());
       this.audio.playPositionChange(this.currentPosition());
       this.startTimer();
     }
@@ -246,13 +275,17 @@ export class TimerService {
       // do zatrzymanej sesji na granicy sesji.
       if (data.breakElapsed === undefined && (state === 'break' || state === 'ready')) {
         if (state === 'break') {
-          currentSession = Math.min(currentSession + 1, this.TOTAL_SESSIONS);
+          currentSession = Math.min(currentSession + 1, this.totalSessions());
         }
         currentSubSession = 1;
-        timeRemaining = this.SUB_SESSION_DURATION;
+        timeRemaining = this.subSessionDuration();
         state = 'session';
         isRunning = false;
       }
+
+      // Zabezpieczenie na wypadek zapisu niezgodnego z bieżącymi ustawieniami.
+      currentSession = Math.min(currentSession, this.totalSessions());
+      timeRemaining = Math.min(timeRemaining, this.subSessionDuration());
 
       if (isRunning && data.savedAt && (state === 'session' || state === 'break')) {
         const elapsed = Math.floor((Date.now() - data.savedAt) / 1000);
@@ -313,14 +346,14 @@ export class TimerService {
         const nextSub = subSession + 1;
         if (nextSub <= this.SUB_SESSIONS_PER_SESSION) {
           subSession = nextSub;
-          remaining = this.SUB_SESSION_DURATION;
-        } else if (session >= this.TOTAL_SESSIONS) {
+          remaining = this.subSessionDuration();
+        } else if (session >= this.totalSessions()) {
           state = 'completed';
           remaining = 0;
         } else {
           session++;
           subSession = 1;
-          remaining = this.SUB_SESSION_DURATION;
+          remaining = this.subSessionDuration();
         }
       } else {
         remaining -= elapsed;

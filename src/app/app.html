@@ -1,47 +1,122 @@
 <main class="flex-1 h-full flex items-center justify-center px-8 pb-10" style="position:relative;z-index:1">
 
-  <div class="flex gap-3 absolute top-4 right-4 z-20">
-    @if (timer.state() === 'session') {
-      <button (click)="addTime(5)" class="reset-btn" title="Dodaj 5 minut">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
+  <!-- ════════════════ MENU ════════════════ -->
+  <div class="absolute top-4 right-4 z-30">
+    <button (click)="showMenu.set(!showMenu())" class="menu-btn" [class.menu-btn-open]="showMenu()"
+            title="Menu" aria-haspopup="menu" [attr.aria-expanded]="showMenu()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="5" r="2"/>
+        <circle cx="12" cy="12" r="2"/>
+        <circle cx="12" cy="19" r="2"/>
+      </svg>
+    </button>
 
-      <button (click)="addTime(-5)" class="reset-btn" title="Odejmij 5 minut">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
-    }
+    @if (showMenu()) {
+      <div class="menu-overlay" (click)="showMenu.set(false)"></div>
+      <div class="menu-panel" role="menu">
+        <button role="menuitem" class="menu-item" [disabled]="timer.state() !== 'session'"
+                (click)="showMenu.set(false); addTime(5)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Dodaj 5 minut
+        </button>
 
-    @if (timer.state() !== 'idle' && timer.state() !== 'completed' && timer.currentSession() < timer.TOTAL_SESSIONS) {
-      <button (click)="timer.skipToNextSession()" class="reset-btn" title="Przejdź do następnej sesji">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5,4 15,12 5,20"/>
-          <line x1="19" y1="4" x2="19" y2="20"/>
-        </svg>
-      </button>
-    }
+        <button role="menuitem" class="menu-item" [disabled]="timer.state() !== 'session'"
+                (click)="showMenu.set(false); addTime(-5)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Odejmij 5 minut
+        </button>
 
-    @if (timer.state() !== 'idle') {
-      <button (click)="showResetModal.set(true)" class="reset-btn" title="Resetuj – zacznij od sesji 1">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="1 4 1 10 7 10"/>
-          <path d="M3.51 15a9 9 0 1 0 .49-4.67"/>
-        </svg>
-      </button>
+        <button role="menuitem" class="menu-item"
+                [disabled]="timer.state() === 'idle' || timer.state() === 'completed' || timer.currentSession() >= timer.totalSessions()"
+                (click)="showMenu.set(false); timer.skipToNextSession()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5,4 15,12 5,20"/>
+            <line x1="19" y1="4" x2="19" y2="20"/>
+          </svg>
+          Następna sesja
+        </button>
+
+        <button role="menuitem" class="menu-item" [disabled]="timer.state() === 'idle'"
+                (click)="showMenu.set(false); showResetModal.set(true)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.67"/>
+          </svg>
+          Resetuj
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <button role="menuitem" class="menu-item" (click)="showMenu.set(false); openSettings()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Ustawienia
+        </button>
+      </div>
     }
   </div>
+
+  <!-- ════════════════ SETTINGS MODAL ════════════════ -->
+  @if (showSettingsModal()) {
+    <div class="modal-backdrop" (click)="showSettingsModal.set(false)" style="z-index:100">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h2 class="modal-title">Ustawienia</h2>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Liczba sesji</div>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn" (click)="stepDraft('sessions', -1)"
+                    [disabled]="draftSessions() <= limits.totalSessions.min" aria-label="Mniej sesji">−</button>
+            <span class="stepper-value">{{ draftSessions() }}</span>
+            <button class="stepper-btn" (click)="stepDraft('sessions', 1)"
+                    [disabled]="draftSessions() >= limits.totalSessions.max" aria-label="Więcej sesji">+</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Długość sesji</div>
+            <div class="settings-hint">3 pozycje × {{ draftSubDuration }}</div>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn" (click)="stepDraft('minutes', -1)"
+                    [disabled]="draftMinutes() <= limits.sessionMinutes.min" aria-label="Krótsza sesja">−</button>
+            <span class="stepper-value">{{ draftMinutes() }}<small> min</small></span>
+            <button class="stepper-btn" (click)="stepDraft('minutes', 1)"
+                    [disabled]="draftMinutes() >= limits.sessionMinutes.max" aria-label="Dłuższa sesja">+</button>
+          </div>
+        </div>
+
+        <div class="modal-actions mt-3">
+          <button (click)="showSettingsModal.set(false)" class="btn-ghost px-6 py-2.5 text-sm">
+            Anuluj
+          </button>
+          <button (click)="saveSettings()" class="btn-primary px-6 py-2.5 text-sm">
+            Zapisz
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- ════════════════ RESET MODAL ════════════════ -->
   @if (showResetModal()) {
@@ -116,7 +191,7 @@
         <div class="flex flex-col items-center gap-5 select-none">
           <!-- Session counter -->
           <div class="text-[11px] uppercase tracking-[.3em]" style="color:rgba(255,255,255,.4)">
-            Sesja {{ timer.currentSession() }}/{{ timer.TOTAL_SESSIONS }}
+            Sesja {{ timer.currentSession() }}/{{ timer.totalSessions() }}
           </div>
 
           <!-- Ring SVG — CSS Grid overlay (SVG + timer in same cell) -->
@@ -266,7 +341,7 @@
             ▶&ensp;Wróć do sesji
           </button>
           <div class="text-sm mt-3" style="color:rgba(255,255,255,.4)">
-            Sesja {{ timer.currentSession() }}/{{ timer.TOTAL_SESSIONS }} · pozostało {{ formattedSessionTime }}
+            Sesja {{ timer.currentSession() }}/{{ timer.totalSessions() }} · pozostało {{ formattedSessionTime }}
           </div>
         </div>
       </div>
