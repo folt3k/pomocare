@@ -278,6 +278,24 @@
 .menu-item:hover:not(:disabled) { background: rgba(255,255,255,.08); color: #fff; }
 .menu-item:hover:not(:disabled) svg { color: #10b981; }
 .menu-item:disabled { opacity: .3; cursor: default; }
+.menu-kbd {
+  margin-left: auto;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 .3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.55);
+  font-family: inherit;
+  font-size: .7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.menu-item:hover:not(:disabled) .menu-kbd { color: #fff; border-color: rgba(255,255,255,.3); }
 .menu-divider { height: 1px; margin: .3rem .5rem; background: rgba(255,255,255,.08); }
 
 /* ─── Settings modal ────────────────────────────────── */

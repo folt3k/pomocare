@@ -14,7 +14,7 @@
     @if (showMenu()) {
       <div class="menu-overlay" (click)="showMenu.set(false)"></div>
       <div class="menu-panel" role="menu">
-        <button role="menuitem" class="menu-item" [disabled]="timer.state() !== 'session'"
+        <button role="menuitem" class="menu-item" [disabled]="!canChangeTime"
                 (click)="showMenu.set(false); addTime(5)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.2"
@@ -23,9 +23,10 @@
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Dodaj 5 minut
+          <kbd class="menu-kbd">+</kbd>
         </button>
 
-        <button role="menuitem" class="menu-item" [disabled]="timer.state() !== 'session'"
+        <button role="menuitem" class="menu-item" [disabled]="!canChangeTime"
                 (click)="showMenu.set(false); addTime(-5)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.2"
@@ -33,10 +34,11 @@
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Odejmij 5 minut
+          <kbd class="menu-kbd">−</kbd>
         </button>
 
         <button role="menuitem" class="menu-item"
-                [disabled]="timer.state() === 'idle' || timer.state() === 'completed' || timer.currentSession() >= timer.totalSessions()"
+                [disabled]="!canSkipSession"
                 (click)="showMenu.set(false); timer.skipToNextSession()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.2"
@@ -45,9 +47,10 @@
             <line x1="19" y1="4" x2="19" y2="20"/>
           </svg>
           Następna sesja
+          <kbd class="menu-kbd">N</kbd>
         </button>
 
-        <button role="menuitem" class="menu-item" [disabled]="timer.state() === 'idle'"
+        <button role="menuitem" class="menu-item" [disabled]="!canReset"
                 (click)="showMenu.set(false); showResetModal.set(true)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.2"
@@ -56,6 +59,7 @@
             <path d="M3.51 15a9 9 0 1 0 .49-4.67"/>
           </svg>
           Resetuj
+          <kbd class="menu-kbd">R</kbd>
         </button>
 
         <div class="menu-divider"></div>

@@ -61,6 +61,55 @@ export class App {
     this.showResetModal.set(false);
   }
 
+  get canChangeTime(): boolean {
+    return this.timer.state() === 'session';
+  }
+
+  get canSkipSession(): boolean {
+    const state = this.timer.state();
+    return state !== 'idle' && state !== 'completed'
+      && this.timer.currentSession() < this.timer.totalSessions();
+  }
+
+  get canReset(): boolean {
+    return this.timer.state() !== 'idle';
+  }
+
+  // Global shortcuts mirroring the menu actions: + / − / N / R
+  @HostListener('document:keydown', ['$event'])
+  onShortcut(event: KeyboardEvent) {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (this.showSettingsModal() || this.showResetModal()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+    switch (event.key) {
+      case '+':
+      case '=':
+        if (!this.canChangeTime) return;
+        this.addTime(5);
+        break;
+      case '-':
+        if (!this.canChangeTime) return;
+        this.addTime(-5);
+        break;
+      case 'n':
+      case 'N':
+        if (event.repeat || !this.canSkipSession) return;
+        this.timer.skipToNextSession();
+        break;
+      case 'r':
+      case 'R':
+        if (event.repeat || !this.canReset) return;
+        this.showResetModal.set(true);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    this.showMenu.set(false);
+  }
+
   constructor() {
     effect(() => {
       const state = this.timer.state();
